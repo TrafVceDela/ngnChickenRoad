@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chicken Road HACK BOT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --primary-color: #ffcc00;
+        --background-color: #121212;
+        --container-bg-color: #1e1e1e;
+        --dark-grey: #333;
+        --light-grey: #444;
+        --text-color: white;
+        --disabled-color: #777;
+        --success-color: #00cc66;
+        --acid-green: #39FF14;
+      }
+
+      body {
+        font-family: "Montserrat", sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        text-align: center;
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow-x: hidden;
+      }
+      body.modal-open {
+        overflow: hidden;
+      }
+
+      .game-container {
+        max-width: 950px; 
+        width: 100%;
+        margin: 0 auto;
+        background-color: var(--container-bg-color);
+        border-radius: 15px;
+        padding: 40px;
+        box-sizing: border-box;
+      }
+
+      h1 {
+        color: var(--primary-color);
+        margin-bottom: 30px;
+        font-size: 3rem;
+        font-weight: 700;
+        text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+      }
+      
+      .hidden { display: none; }
+
+      button {
+        padding: 20px 45px;
+        font-size: 20px;
+        width: 240px;
+        background-color: #ffcc00; color: #121212; border: none;
+        border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); position: relative; overflow: hidden;
+      }
+      button:hover:not(:disabled) {
+        background-color: #ffdd33; transform: translateY(-3px);
+        box-shadow: 0 7px 14px rgba(0, 0, 0, 0.2);
+        color: #000;
+      }
+      button:disabled { background-color: #444; color: #777; cursor: not-allowed; }
+      
+      button::after {
+        content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(45deg, transparent 25%, rgba(255, 255, 255, 0.1) 50%, transparent 75%);
+        background-size: 400% 400%; opacity: 0; transition: all 0.5s ease;
+      }
+      button:hover:not(:disabled)::after { opacity: 1; animation: shine 1.5s infinite; }
+
+      input {
+        padding: 18px 25px;
+        border-radius: 10px; background-color: #333; color: white;
+        border: none; font-size: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); text-align: center;
+      }
+      #user-id { width: 240px; }
+      
+      label {
+        display: block; margin-bottom: 12px; font-weight: 600; color: #ddd;
+        font-size: 20px;
+      }
+
+      .id-form { display: flex; flex-direction: column; align-items: center; gap: 25px; margin-bottom: 30px; }
+      .loading-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.3s ease;
+      }
+      .loading-overlay.active { opacity: 1; visibility: visible; }
+      .loading-spinner {
+        width: 60px; height: 60px; border: 6px solid rgba(255, 204, 0, 0.3);
+        border-radius: 50%; border-top-color: #ffcc00;
+        animation: spin 1s ease-in-out infinite; margin-bottom: 20px;
+      }
+      .how-to-use-btn {
+        background-color: transparent; border: 2px solid #ffcc00; color: #ffcc00;
+        margin: 0 auto 25px; max-width: 400px;
+      }
+      
+      .modal-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center;
+        z-index: 2000; opacity: 0; visibility: hidden; transition: all 0.3s ease;
+        padding: 10px;
+      }
+      .modal-overlay.active { opacity: 1; visibility: visible; }
+      .modal-content { 
+          background-color: #1e1e1e; border-radius: 15px; padding: 40px; 
+          max-width: 800px; width: 90%; position: relative;
+          box-sizing: border-box; 
+      }
+      .close-modal { position: absolute; top: 15px; right: 15px; font-size: 24px; color: #aaa; cursor: pointer; }
+      .modal-title { font-size: 28px; color: #ffcc00; margin-bottom: 20px; }
+      .modal-text { font-size: 18px; text-align: left; line-height: 1.6; }
+      
+      @keyframes shine { 0% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* Game Styles */
+      .game-settings { margin-bottom: 25px; display: flex; justify-content: center; align-items: center; gap: 20px; }
+      .custom-select-wrapper { 
+        position: relative; 
+        width: 240px;
+        transition: opacity 0.3s ease;
+      }
+      .custom-select-wrapper.disabled-visuals {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      
+      #difficulty-select {
+        -webkit-appearance: none; -moz-appearance: none; appearance: none;
+        width: 100%; padding: 20px 45px; border-radius: 10px; background-color: #333;
+        color: white; border: none; font-size: 20px; cursor: pointer; font-family: "Montserrat", sans-serif;
+      }
+      .custom-select-wrapper::after { content: '▼'; position: absolute; top: 50%; right: 25px; transform: translateY(-50%); pointer-events: none; font-size: 22px; }
+
+      #signal-display {
+          border: 2px solid var(--primary-color);
+          padding: 15px 20px;
+          border-radius: 10px;
+          margin: 0 auto 25px;
+          font-size: 20px;
+          font-weight: 600;
+          max-width: 500px;
+      }
+      #signal-clicks {
+          color: var(--acid-green);
+          font-weight: 700;
+          text-decoration: underline;
+          font-size: 32px;
+          text-shadow: 0 0 8px var(--acid-green);
+      }
+
+      #game-stage {
+        background-color: #2a2a2a; border-radius: 10px; padding: 20px 0;
+        position: relative; height: 350px;
+        display: flex; align-items: center; border: 2px solid #333;
+        overflow-x: scroll;
+        scroll-behavior: smooth;
+      }
+      #game-stage::-webkit-scrollbar { display: none; }
+      #game-stage { -ms-overflow-style: none; scrollbar-width: none; }
+
+      #chicken-char {
+        position: absolute; width: 90px; height: 90px;
+        z-index: 10; bottom: 110px;
+        left: 30px; 
+        transition: left 0.5s ease-in-out;
+      }
+      #path-container {
+        display: flex; align-items: center;
+        height: 100%;
+        position: relative;
+      }
+      .path-step {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        position: relative; width: 150px;
+        flex-shrink: 0;
+      }
+      .step-circle {
+        width: 110px; height: 110px;
+        border-radius: 50%; background-color: #333;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 22px;
+        color: white; border: 6px solid #444; transition: all 0.4s;
+        word-break: break-all;
+      }
+      .path-step.passed { opacity: 0.6; }
+      .path-step.active .step-circle { 
+        background-color: #00cc66; transform: scale(1.1); box-shadow: 0 0 30px #00cc66;
+      }
+      
+      .grate {
+        width: 100px; height: 50px;
+        background: #111; border-radius: 5px; margin-top: 60px; border-top: 5px solid #222;
+      }
+      
+      #controls-panel {
+        padding: 30px 0; margin-top: 10px; display: flex;
+        flex-direction: column;
+        justify-content: center; align-items: center; flex-wrap: wrap; gap: 25px;
+      }
+      .button-group {
+        display: flex;
+        gap: 20px;
+      }
+      .bet-amount {
+        font-size: 32px; font-weight: 700; color: #ffcc00;
+        text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+      }
+      
+      /* --- ADDED RESPONSIVE STYLES --- */
+      .modal-content::-webkit-scrollbar {
+        width: 8px;
+      }
+      .modal-content::-webkit-scrollbar-track {
+        background: var(--dark-grey);
+        border-radius: 4px;
+      }
+      .modal-content::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 4px;
+      }
+      .modal-content::-webkit-scrollbar-thumb:hover {
+        background: #ffdd33;
+      }
+
+      @media (max-width: 768px) {
+          .game-container {
+              padding: 20px;
+          }
+          h1 {
+              font-size: 2rem;
+          }
+          .id-form, .button-group, .game-settings {
+              flex-direction: column;
+              gap: 15px;
+              width: 100%;
+          }
+          button, input, .custom-select-wrapper {
+              width: 100%;
+              box-sizing: border-box;
+          }
+          .modal-content {
+              padding: 25px;
+              max-height: 80vh; /* Fixed height */
+              overflow-y: auto; /* Added scroll */
+          }
+          .modal-title {
+              font-size: 22px;
+          }
+          .modal-text {
+              font-size: 16px;
+          }
+      }
+      
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loading-overlay"> <div class="loading-spinner"></div> <div class.loading-text">Verifying your ID...</div> </div>
+    <div class="modal-overlay" id="modal-overlay"> 
+        <div class="modal-content"> 
+            <span class="close-modal" id="close-modal">&times;</span>
+            <h3 class="modal-title">HOW TO USE THE BOT</h3>
+            <div class="modal-text">
+                <ol>
+                    <li>
+                        <strong>First</strong>, you must know how much you need to bet
+                        by clicking the button - "Get Bet Amount"
+                    </li>
+                    <li>
+                        You <strong>MUST</strong> first make a bet for the amount
+                        shown and only then click the "Get Signal" button.
+                    </li>
+                </ol>
+                <p>This is the only way you will win!</p>
+                <p>
+                    If you take a signal and do not place a bet to verify the bot,
+                    you will get an incorrect signal because the bot does not see your bet on the
+                    Betwinner site and cannot analyze the winning signal.
+                </p>
+                <p>
+                    If you lose, it means you are doing something wrong. Or if you are sure
+                    that you are doing everything correctly, change your browser or
+                    play with a VPN.
+                </p>
+            </div>
+        </div> 
+    </div>
+
+    <div class="game-container">
+        <h1>Chicken Road HACK BOT</h1>
+        <button class="how-to-use-btn" id="how-to-use-btn">HOW TO PLAY</button>
+
+        <div class="id-form" id="id-form">
+            <div>
+                <label for="user-id">Enter your Account ID</label>
+                <input type="text" id="user-id" placeholder="Your Account ID" pattern="\d{8,}" required />
+            </div>
+            <button id="verify-btn">Verify ID</button>
+        </div>
+        
+        <div id="game-content" class="hidden">
+            <div class="game-settings">
+                <label for="difficulty-select">Difficulty:</label>
+                <div class="custom-select-wrapper" id="difficulty-wrapper">
+                    <select id="difficulty-select">
+                        <option value="24">Easy</option>
+                        <option value="22">Medium</option>
+                        <option value="20">Hard</option>
+                        <option value="15">Hardcore</option>
+                    </select>
+                </div>
+            </div>
+            <div id="signal-display" class="hidden">
+                YOU SHOULD CLICK 'GO' <span id="signal-clicks">0</span> TIMES
+            </div>
+            <div id="game-stage" class="game-stage">
+                <div id="path-container"></div>
+                <img id="chicken-char" src="https://iili.io/FvIoXhg.webp" alt="chicken">
+            </div>
+            <div id="controls-panel">
+                 <div class="bet-amount">Bet: <span id="bet-amount-display">...</span> NGN</div>
+                 <div class="button-group">
+                    <button id="get-bet-btn">GET BET</button>
+                    <button id="get-signal-btn" disabled>GET SIGNAL</button>
+                 </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// --- DOM ELEMENTS ---
+const idForm = document.getElementById("id-form");
+const gameContent = document.getElementById("game-content");
+const userIdInput = document.getElementById("user-id");
+const verifyBtn = document.getElementById("verify-btn");
+const loadingOverlay = document.getElementById("loading-overlay");
+const howToUseBtn = document.getElementById("how-to-use-btn");
+const modalOverlay = document.getElementById("modal-overlay");
+const closeModal = document.getElementById("close-modal");
+const getBetBtn = document.getElementById("get-bet-btn");
+const getSignalBtn = document.getElementById("get-signal-btn");
+const difficultySelect = document.getElementById("difficulty-select");
+const difficultyWrapper = document.getElementById("difficulty-wrapper");
+const gameStage = document.getElementById("game-stage");
+const pathContainer = document.getElementById("path-container");
+const chickenChar = document.getElementById("chicken-char");
+const betAmountDisplay = document.getElementById("bet-amount-display");
+const signalDisplay = document.getElementById("signal-display");
+const signalClicksSpan = document.getElementById("signal-clicks");
+
+// --- GAME STATE & CONSTANTS ---
+let fullMultiplierList = [];
+let gameState = {
+    isActive: false,
+    stepsMade: 0,
+    maxSteps: 24,
+    betAmount: 0,
+};
+
+// --- CORE LOGIC ---
+verifyBtn.addEventListener("click", () => {
+    if (userIdInput.value.length >= 8 && /^\d+$/.test(userIdInput.value)) {
+        loadingOverlay.classList.add("active");
+        setTimeout(() => {
+            loadingOverlay.classList.remove("active");
+            idForm.remove(); 
+            gameContent.classList.remove("hidden");
+            resetGame();
+        }, 1500);
+    } else {
+        alert("ID must be at least 8 digits.");
+    }
+});
+
+howToUseBtn.addEventListener("click", () => {
+    document.body.classList.add("modal-open");
+    modalOverlay.classList.add("active");
+});
+closeModal.addEventListener("click", () => {
+    document.body.classList.remove("modal-open");
+    modalOverlay.classList.remove("active");
+});
+modalOverlay.addEventListener("click", (e) => {
+    if(e.target === modalOverlay) {
+        document.body.classList.remove("modal-open");
+        modalOverlay.classList.remove("active");
+    }
+});
+
+// --- GAME LOGIC ---
+
+function generateMultipliers(length) {
+    let multipliers = [];
+    let currentMul = 1.0;
+    for (let i = 0; i < length; i++) {
+        let increment = 0.20 - (i * 0.005);
+        if (increment < 0.02) increment = 0.02;
+        currentMul += increment;
+        multipliers.push(currentMul);
+    }
+    return multipliers;
+}
+
+function createStepElement(index) {
+    const stepEl = document.createElement('div');
+    stepEl.className = 'path-step';
+    stepEl.dataset.index = index;
+    stepEl.innerHTML = `<div class="step-circle"></div><div class="grate"></div>`;
+    pathContainer.appendChild(stepEl);
+}
+
+async function simulateClicks(count) {
+    for (let i = 0; i < count; i++) {
+        if (gameState.stepsMade >= gameState.maxSteps - 1) break; 
+        gameState.stepsMade++;
+        updateVisuals(); 
+        await new Promise(resolve => setTimeout(resolve, 600));
+    }
+    
+    gameState.isActive = false;
+    getBetBtn.disabled = false;
+    difficultySelect.disabled = false;
+    difficultyWrapper.classList.remove('disabled-visuals');
+}
+
+function updateVisuals() {
+    const stepWidth = 150;
+    const chickenWidth = 90;
+
+    const chickenTargetLeft = (stepWidth * gameState.stepsMade) + (stepWidth / 2) - (chickenWidth / 2);
+    chickenChar.style.left = `${chickenTargetLeft}px`;
+
+    const cameraTargetScroll = chickenTargetLeft - (chickenWidth * 1.5);
+    gameStage.scroll({ left: cameraTargetScroll, behavior: 'smooth' });
+    
+    const steps = pathContainer.querySelectorAll('.path-step');
+    steps.forEach(el => {
+        const index = parseInt(el.dataset.index);
+        el.classList.remove('active', 'passed');
+        if (index === gameState.stepsMade) {
+            el.classList.add('active');
+        } else if (index < gameState.stepsMade) {
+            el.classList.add('passed');
+        }
+    });
+}
+
+function resetGame() {
+    gameState.maxSteps = parseInt(difficultySelect.value);
+    fullMultiplierList = generateMultipliers(gameState.maxSteps);
+    
+    pathContainer.innerHTML = '';
+    for (let i = 0; i < gameState.maxSteps; i++) {
+        createStepElement(i);
+    }
+    
+    gameState.isActive = false;
+    gameState.stepsMade = 0;
+    
+    getBetBtn.disabled = false;
+    getSignalBtn.disabled = true;
+    difficultySelect.disabled = false;
+    difficultyWrapper.classList.remove('disabled-visuals');
+    signalDisplay.classList.add('hidden');
+    
+    betAmountDisplay.textContent = '...';
+    gameStage.scrollLeft = 0;
+    
+    const chickenInitialLeft = (150 / 2) - (90 / 2);
+    chickenChar.style.transition = 'none';
+    chickenChar.style.left = `${chickenInitialLeft}px`;
+    setTimeout(() => {
+        chickenChar.style.transition = 'left 0.5s ease-in-out';
+    }, 50);
+
+    updateVisuals();
+}
+
+// --- EVENT LISTENERS ---
+getBetBtn.addEventListener("click", () => {
+    resetGame();
+    
+    gameState.isActive = true;
+    gameState.betAmount = Math.floor(Math.random() * 451 + 50) * 10;
+    betAmountDisplay.textContent = gameState.betAmount;
+    
+    getSignalBtn.disabled = false;
+    getBetBtn.disabled = true;
+    difficultySelect.disabled = true;
+    difficultyWrapper.classList.add('disabled-visuals');
+});
+
+getSignalBtn.addEventListener("click", () => {
+    if (!gameState.isActive) return;
+    
+    getSignalBtn.disabled = true;
+
+    let percentage;
+    switch (gameState.maxSteps) {
+        case 24: percentage = 0.70; break;
+        case 22: percentage = 0.50; break;
+        case 20: percentage = 0.40; break;
+        case 15: percentage = 0.30; break;
+        default: percentage = 0.70;
+    }
+
+    const maxSignal = Math.floor(gameState.maxSteps * percentage);
+    const clicks = Math.max(1, Math.floor(Math.random() * maxSignal) + 1);
+
+    signalClicksSpan.textContent = clicks;
+    signalDisplay.classList.remove('hidden');
+
+    simulateClicks(clicks);
+});
+
+difficultySelect.addEventListener('change', resetGame);
+
+</script>
+</body>
+</html>

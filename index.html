@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chicken Road HACK BOT</title>
+    <title>Chicken Road - Final Version</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet" />
     <style>
       :root {
@@ -42,7 +42,6 @@
         background-color: var(--container-bg-color);
         border-radius: 15px;
         padding: 40px;
-        box-sizing: border-box;
       }
 
       h1 {
@@ -112,14 +111,9 @@
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
         background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center;
         z-index: 2000; opacity: 0; visibility: hidden; transition: all 0.3s ease;
-        padding: 10px;
       }
       .modal-overlay.active { opacity: 1; visibility: visible; }
-      .modal-content { 
-          background-color: #1e1e1e; border-radius: 15px; padding: 40px; 
-          max-width: 800px; width: 90%; position: relative;
-          box-sizing: border-box; 
-      }
+      .modal-content { background-color: #1e1e1e; border-radius: 15px; padding: 40px; max-width: 800px; width: 90%; position: relative; }
       .close-modal { position: absolute; top: 15px; right: 15px; font-size: 24px; color: #aaa; cursor: pointer; }
       .modal-title { font-size: 28px; color: #ffcc00; margin-bottom: 20px; }
       .modal-text { font-size: 18px; text-align: left; line-height: 1.6; }
@@ -195,7 +189,6 @@
         display: flex; align-items: center; justify-content: center;
         font-weight: 700; font-size: 22px;
         color: white; border: 6px solid #444; transition: all 0.4s;
-        word-break: break-all;
       }
       .path-step.passed { opacity: 0.6; }
       .path-step.active .step-circle { 
@@ -220,52 +213,6 @@
         font-size: 32px; font-weight: 700; color: #ffcc00;
         text-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
       }
-      
-      /* --- ADDED RESPONSIVE STYLES --- */
-      .modal-content::-webkit-scrollbar {
-        width: 8px;
-      }
-      .modal-content::-webkit-scrollbar-track {
-        background: var(--dark-grey);
-        border-radius: 4px;
-      }
-      .modal-content::-webkit-scrollbar-thumb {
-        background: var(--primary-color);
-        border-radius: 4px;
-      }
-      .modal-content::-webkit-scrollbar-thumb:hover {
-        background: #ffdd33;
-      }
-
-      @media (max-width: 768px) {
-          .game-container {
-              padding: 20px;
-          }
-          h1 {
-              font-size: 2rem;
-          }
-          .id-form, .button-group, .game-settings {
-              flex-direction: column;
-              gap: 15px;
-              width: 100%;
-          }
-          button, input, .custom-select-wrapper {
-              width: 100%;
-              box-sizing: border-box;
-          }
-          .modal-content {
-              padding: 25px;
-              max-height: 80vh; /* Fixed height */
-              overflow-y: auto; /* Added scroll */
-          }
-          .modal-title {
-              font-size: 22px;
-          }
-          .modal-text {
-              font-size: 16px;
-          }
-      }
-      
     </style>
 </head>
 <body>
@@ -273,7 +220,7 @@
     <div class="modal-overlay" id="modal-overlay"> 
         <div class="modal-content"> 
             <span class="close-modal" id="close-modal">&times;</span>
-            <h3 class="modal-title">HOW TO USE THE BOT</h3>
+                        <h3 class="modal-title">HOW TO USE THE BOT</h3>
             <div class="modal-text">
                 <ol>
                     <li>
@@ -301,7 +248,7 @@
     </div>
 
     <div class="game-container">
-        <h1>Chicken Road HACK BOT</h1>
+        <h1>Chicken Road</h1>
         <button class="how-to-use-btn" id="how-to-use-btn">HOW TO PLAY</button>
 
         <div class="id-form" id="id-form">
@@ -418,14 +365,22 @@ function generateMultipliers(length) {
 function createStepElement(index) {
     const stepEl = document.createElement('div');
     stepEl.className = 'path-step';
-    stepEl.dataset.index = index;
-    stepEl.innerHTML = `<div class="step-circle"></div><div class="grate"></div>`;
+    
+    // index -1 will be our start platform
+    if (index === -1) {
+        stepEl.innerHTML = `<div class="grate"></div>`;
+    } else {
+        stepEl.dataset.index = index;
+        stepEl.innerHTML = `<div class="step-circle"></div><div class="grate"></div>`;
+    }
     pathContainer.appendChild(stepEl);
 }
 
 async function simulateClicks(count) {
     for (let i = 0; i < count; i++) {
-        if (gameState.stepsMade >= gameState.maxSteps - 1) break; 
+        // The number of steps made cannot exceed the max steps
+        if (gameState.stepsMade >= gameState.maxSteps) break; 
+        
         gameState.stepsMade++;
         updateVisuals(); 
         await new Promise(resolve => setTimeout(resolve, 600));
@@ -441,19 +396,23 @@ function updateVisuals() {
     const stepWidth = 150;
     const chickenWidth = 90;
 
+    // The chicken's position is based on stepsMade (0 = start, 1 = first step, etc.)
     const chickenTargetLeft = (stepWidth * gameState.stepsMade) + (stepWidth / 2) - (chickenWidth / 2);
     chickenChar.style.left = `${chickenTargetLeft}px`;
 
     const cameraTargetScroll = chickenTargetLeft - (chickenWidth * 1.5);
     gameStage.scroll({ left: cameraTargetScroll, behavior: 'smooth' });
     
+    // The active step's index is one less than the number of steps made
+    const activeStepIndex = gameState.stepsMade - 1;
     const steps = pathContainer.querySelectorAll('.path-step');
-    steps.forEach(el => {
-        const index = parseInt(el.dataset.index);
+
+    steps.forEach((el) => {
+        const index = el.dataset.index !== undefined ? parseInt(el.dataset.index) : -1;
         el.classList.remove('active', 'passed');
-        if (index === gameState.stepsMade) {
+        if (index === activeStepIndex) {
             el.classList.add('active');
-        } else if (index < gameState.stepsMade) {
+        } else if (index < activeStepIndex && index !== -1) {
             el.classList.add('passed');
         }
     });
@@ -464,6 +423,9 @@ function resetGame() {
     fullMultiplierList = generateMultipliers(gameState.maxSteps);
     
     pathContainer.innerHTML = '';
+    // Create the starting platform first
+    createStepElement(-1);
+    // Then create the real steps
     for (let i = 0; i < gameState.maxSteps; i++) {
         createStepElement(i);
     }
